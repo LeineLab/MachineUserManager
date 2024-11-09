@@ -76,8 +76,6 @@ class db_connector:
 	def can_create_session(self):
 		price = self.per_login + self.per_minute
 		self.check_credit()
-		print("Credit: ", self.credit)
-		print("Price: ", price)
 		return self.credit >= price
 
 	def check_credit(self):
