@@ -345,7 +345,7 @@ while True:
 				logging.debug('No callback defined for event card_authorized')
 			except TypeError:
 				logging.exception('Your callback may be malformed or outdated as probably the parameters mismatch')
-			price_once, price_minute = session.get_rate()
+			price_once, price_minute = session.get_rate(PRICE_ONCE, PRICE_MINUTE)
 			if price_once is None:
 				price_once = PRICE_ONCE # Fallback to defaults
 			if price_minute is None:

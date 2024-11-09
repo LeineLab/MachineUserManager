@@ -53,7 +53,7 @@ class db_connector:
 			self.credit = 0.0
 			return None, None
 
-	def get_rate(self):
+	def get_rate(self, fallback_login, fallback_minute):
 		self.cursor.execute('SELECT r.per_login, r.per_minute FROM authorization a LEFT JOIN rates r ON a.rate = r.rid WHERE a.uid = %s AND a.machine = %s', (self.uid, self.machine))
 		try:
 			result = self.cursor.fetchone()
@@ -61,19 +61,23 @@ class db_connector:
 			self.per_minute = float(result['per_minute'])
 			return self.per_login, self.per_minute
 		except:
+			self.per_login = fallback_login
+			self.per_minute = fallback_minute
 			return None, None
 
 	def is_authorized(self):
 		self.cursor.execute('SELECT uid FROM authorization WHERE uid = %s AND machine = %s', (self.uid, self.machine))
 		try:
 			self.cursor.fetchone()
-			return self.cursor.rowcount != 0
+			return self.cursor.rowcount > 0
 		except:
 			return False
 
 	def can_create_session(self):
 		price = self.per_login + self.per_minute
 		self.check_credit()
+		print("Credit: ", self.credit)
+		print("Price: ", price)
 		return self.credit >= price
 
 	def check_credit(self):
