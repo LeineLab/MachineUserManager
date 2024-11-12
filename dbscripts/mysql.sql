@@ -10,8 +10,10 @@ START TRANSACTION;
 CREATE TABLE `cards` (
   `uid` bigint(20) NOT NULL,
   `name` varchar(40) NOT NULL DEFAULT 'No Name',
-  `value` decimal(10,2) unsigned NOT NULL DEFAULT 0.00
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `value` decimal(10,2) unsigned NOT NULL DEFAULT 0.00,
+  `registered_on` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 ALTER TABLE `cards`
   ADD PRIMARY KEY (`uid`);
@@ -29,7 +31,7 @@ CREATE TABLE `alias` (
   `comment` varchar(30) NOT NULL
   PRIMARY KEY (`card_id`),
   CONSTRAINT `alias_ibfk_1` FOREIGN KEY (`uid`) REFERENCES `cards` (`uid`) ON DELETE CASCADE ON UPDATE CASCADE;
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 COMMIT;
 
 /*
@@ -40,7 +42,7 @@ START TRANSACTION;
 CREATE TABLE `machines` (
   `name` varchar(40) NOT NULL
   PRIMARY KEY (`name`);
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 COMMIT;
 
 /*
@@ -52,7 +54,7 @@ CREATE TABLE `rates` (
   `per_login` decimal(5,2) unsigned NOT NULL DEFAULT 0.00,
   `per_minute` decimal(5,2) unsigned NOT NULL DEFAULT 0.00,
   PRIMARY KEY (`rid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 COMMIT;
 
 /*
@@ -67,13 +69,14 @@ CREATE TABLE `sessions` (
   `start_time` int(11) NOT NULL DEFAULT 0,
   `end_time` int(11) DEFAULT NULL,
   `price` decimal(6,2) NOT NULL DEFAULT 0.00,
+  `comment` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`bid`),
   KEY `quicksel` (`uid`,`machine`,`start_time`),
   KEY `sessions_ibfk_1` (`machine`),
   KEY `sessions_ibfk_2` (`uid`),
   CONSTRAINT `sessions_ibfk_1` FOREIGN KEY (`machine`) REFERENCES `machines` (`name`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `sessions_ibfk_2` FOREIGN KEY (`uid`) REFERENCES `cards` (`uid`) ON DELETE SET NULL ON UPDATE CASCADE,
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 COMMIT;
 
 
@@ -85,9 +88,17 @@ CREATE TABLE `authorization` (
   `uid` bigint(20) NOT NULL,
   `machine` varchar(40) NOT NULL,
   `rate` varchar(20) DEFAULT NULL,
+  `issued` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`uid`,`machine`),
   CONSTRAINT `authorization_ibfk_1` FOREIGN KEY (`machine`) REFERENCES `machines` (`name`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `authorization_ibfk_2` FOREIGN KEY (`uid`) REFERENCES `cards` (`uid`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `authorization_ibfk_3` FOREIGN KEY (`rate`) REFERENCES `rates` (`rid`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 COMMIT;
+
+
+
+/*
+  You can use this project in combination with an NFCKasse instance.
+  Please apply the SQL script as well.
+*/
