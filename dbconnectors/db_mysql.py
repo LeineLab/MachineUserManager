@@ -88,9 +88,9 @@ class db_connector:
 			return 0
 
 
-	def create_session(self):
+	def create_session(self, fallback_login, fallback_minute):
 		self.start_time = int(time.time())
-		self.get_rate()
+		self.get_rate(fallback_login, fallback_minute)
 		price = self.per_login + self.per_minute
 		try:
 			self.cursor.execute('UPDATE cards SET value = (value - %s) WHERE uid = %s AND value >= %s', (price, self.uid, price))

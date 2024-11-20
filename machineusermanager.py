@@ -362,7 +362,7 @@ while True:
 						break
 					elif do_confirm:
 						set_button_leds(False, True)
-						if session.create_session():
+						if session.create_session(PRICE_ONCE, PRICE_MINUTE):
 							try:
 								callbacks.user_login(uid, username)
 							except NameError:
