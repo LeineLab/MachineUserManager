@@ -10,6 +10,10 @@ from math import ceil
 from importlib import import_module
 from mqtt_notify import MqttNotify
 import callbacks
+
+logging.basicConfig()
+logging.getLogger().setLevel(logging.INFO)
+
 try:
 	import user_callbacks as callbacks
 except ImportError:
