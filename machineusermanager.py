@@ -451,7 +451,7 @@ while True:
 			display_text(lang.LOGGED_IN)
 		set_yellow_led(job_active & ((time.time() % 2) < 1))
 
-		if not session.extend_session():
+		if not OVERRIDE and not session.extend_session():
 			logging.debug('Could not extend session')
 			session.end_session()
 			lock_machine()
@@ -485,11 +485,12 @@ while True:
 			except TypeError:
 				logging.exception('Your callback may be malformed or outdated as probably the parameters mismatch')
 		elif job_active != job_is_running:
-			if notify is not None:
-				notify.setState(job_is_running)
 			# Manual debouncing as the state signal may trigger when switching the machine off
 			if last_state_change + STATE_DEBOUNCE_TIME < time.time():
-				if not job_active:
+				job_active = not job_active
+				if notify is not None:
+					notify.setState(job_active)
+				if job_active:
 					logging.debug('Job started')
 					job_started = time.time()
 					try:
@@ -506,7 +507,6 @@ while True:
 						logging.debug('No callback defined for event job_end')
 					except TypeError:
 						logging.exception('Your callback may be malformed or outdated as probably the parameters mismatch')
-				job_active = not job_active
 				last_state_change = time.time()
 		else:
 			last_state_change = time.time() #reset debounce timer
