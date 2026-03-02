@@ -24,7 +24,7 @@ But in a semi-trusted area it works very well.
 - Cheap: The components you need are not that expensive.
   Even the cards for each user are just a few cents, if they don't have a compatible one already.
 - Flexibility: This is a full rewrite of my former application, so to get things right, I designed it to be as flexible as possible (or at least currently needed).
-  Translations, databases, all interchangable.
+  Translations, callbacks, all interchangable.
 - Multimachine, single user management: By using a central database for management and running the applications on multiple devices (Pis) you can control multiple machines.
 - Upgradeability: The nice thing about open source - just improve the application to fit your needs.
 
@@ -117,15 +117,14 @@ As the pinout of the PCF8574 and PN532 breakouts are the same, I crimped a 10p f
 I connected all unused wires to GND to improve shielding inside of the Lasercutter (side by side with 230V etc).
 
 ## Configuration
-All above parameters are also in `config.py`.
+All above parameters are in `config.py`.
 Please create your configuration as `user_config.py` to apply your changes.
+Set `API_URL` to your MakerSpaceAPI instance and `API_TOKEN` to the bearer token for this machine.
 As stated: if you just want basic access control and charge nothing for the usage, simply set `PRICE_ONCE` and `PRICE_MINUTE` to 0. You can also remove the prices from `languages/xx.py` (or better create a file `languages/own.py` and set `GUI_LANGUAGE = 'own'`.
 
 `PRICE_ONCE` is charged when starting a session.
 On power loss (when `MACHINE_ON` goes off, triggered by emergency stop/...) the session ends automatically and the user needs to log in again.
 You can also only set `PRICE_ONCE` to reflect a price for using the machine but by setting `PRICE_MINUTE` to zero for unlimited time once logged in.
-
-The default database creation can be found in `dbscripts/`
 
 ## Callbacks
 You can define your callbacks in `user_callbacks.py`.

@@ -26,13 +26,11 @@ except ImportError:
 	logging.info('No user_config available, using defaults')
 
 lang = import_module('languages.{}'.format(UI_LANGUAGE))
-db_connector = import_module('dbconnectors.db_{}'.format(DB_TYPE))
-db_connector.db_connector.configure(
-	host     = DB_HOST,
-	user     = DB_USER,
-	password = DB_PASSWORD,
-	database = DB_DATABASE,
-	machine  = MACHINE_NAME
+import makerspaceapi
+makerspaceapi.api.configure(
+	machine   = MACHINE_NAME,
+	api_url   = API_URL,
+	api_token = API_TOKEN,
 )
 
 pni2c = Pn532I2c(1)
@@ -309,7 +307,7 @@ while True:
 		except TypeError:
 			logging.exception('Your callback may be malformed or outdated as probably the parameters mismatch')
 		try:
-			session = db_connector.db_connector(uid)
+			session = makerspaceapi.api(uid)
 			username, credit = session.get_user_info()
 			authorized = session.is_authorized()
 		except:
