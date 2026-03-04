@@ -11,12 +11,9 @@ user_config.py
 This makes upgrading to newer versions easy by simply calling git pull.
 '''
 
-# DATABASE
-DB_TYPE       = 'mysql'
-DB_HOST       = 'localhost'
-DB_USER       = 'machine'
-DB_PASSWORD   = 'password'
-DB_DATABASE   = 'machines'
+# MakerSpaceAPI REST connection
+API_URL       = 'http://localhost:8000'
+API_TOKEN     = ''  # Set machine Bearer token in user_config.py
 
 # If you want to expose sensors to Home Assistant via MQTT, define a host
 #MQTT_HOST     = 'localhost'

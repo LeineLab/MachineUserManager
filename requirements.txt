@@ -1,4 +1,4 @@
-mysql-connector-python
+requests
 rpi-lgpio
 pn532pi >= 1.7
 RPLCD
