@@ -67,7 +67,6 @@ LOGIN = [
 ]
 
 LOGGED_IN = [
-	#01234567890123456789
     "Freigeschaltet von:",
     "{NAME}",
     "Verbleibende Zeit:",
