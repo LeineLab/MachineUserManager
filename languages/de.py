@@ -44,6 +44,14 @@ CARD_UNAUTHORIZED = [
 ]
 
 # HAS COUNTDONW
+TERMS_REQUIRED = [
+    "  Bitte Nutzungs-",
+    "  bedingungen im",
+    "  Webinterface",
+    "   akzeptieren.",
+]
+
+# HAS COUNTDONW
 CARD_UNKNOWN = [
     "Die Karte ist nicht",
     "im System hinterlegt",

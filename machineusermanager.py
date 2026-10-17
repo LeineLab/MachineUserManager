@@ -355,8 +355,10 @@ while True:
         try:
             session = makerspaceapi.api(uid)
             username, credit = session.get_user_info()
-            authorized = session.is_authorized()
-        except:
+            access = session.access_state()
+        except Exception:
+            # Includes makerspaceapi.ApiUnavailable: an unreachable API must
+            # never be shown as "unknown card" or "not authorized".
             display_text(lang.DB_UNAVAILABLE)
             countdown(TIMEOUT_SEC)
             break
@@ -378,7 +380,19 @@ while True:
                 )
             display_text(lang.CARD_UNKNOWN)
             countdown(TIMEOUT_SEC)
-        elif not authorized:
+        elif access == "terms_required":
+            logging.info("Card %d has not accepted the terms of use", uid)
+            try:
+                callbacks.card_terms_required(uid, username)
+            except NameError:
+                logging.debug("No callback defined for event card_terms_required")
+            except TypeError:
+                logging.exception(
+                    "Your callback may be malformed or outdated as probably the parameters mismatch"
+                )
+            display_text(lang.TERMS_REQUIRED)
+            countdown(TIMEOUT_SEC)
+        elif access != "authorized":
             logging.info("Card %d is unauthorized to use this machine", uid)
             try:
                 callbacks.card_unauthorized(uid, username)

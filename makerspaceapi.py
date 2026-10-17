@@ -12,6 +12,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class ApiUnavailable(Exception):
+    """The API could not be reached or answered with an unexpected status."""
+
+
 class api:
     api_url = "http://localhost:8000"
     api_token = ""
@@ -64,21 +68,28 @@ class api:
             logger.exception("Could not fetch user info on init")
 
     def get_user_info(self):
+        """Return (name, credit); (None, None) if the card is unknown.
+
+        Raises ApiUnavailable if the API cannot be reached or fails, so that
+        an outage is not mistaken for an unknown card.
+        """
         try:
             r = requests.get(
                 f"{api._base()}/users/nfc/{self.uid}",
                 headers=api._headers(),
                 timeout=5,
             )
-            if r.ok:
-                data = r.json()
-                self._name = data.get("name")
-                self.credit = float(data.get("balance", 0))
-                return self._name, self.credit
-            return None, None
-        except requests.RequestException:
+        except requests.RequestException as e:
             logger.exception("get_user_info failed")
+            raise ApiUnavailable(str(e)) from e
+        if r.status_code == 404:
             return None, None
+        if not r.ok:
+            raise ApiUnavailable(f"HTTP {r.status_code}")
+        data = r.json()
+        self._name = data.get("name")
+        self.credit = float(data.get("balance", 0))
+        return self._name, self.credit
 
     def get_rate(self, fallback_login, fallback_minute):
         try:
@@ -101,19 +112,35 @@ class api:
             self.per_minute = fallback_minute
             return None, None
 
-    def is_authorized(self):
+    def access_state(self):
+        """Return "authorized", "unauthorized" or "terms_required".
+
+        "terms_required" means the user is authorized but has not accepted the
+        machine's current terms of use yet (servers without that feature never
+        report it). Raises ApiUnavailable if the API cannot be reached or fails.
+        """
         try:
             r = requests.get(
                 f"{api._base()}/machines/{api.machine}/authorize/{self.uid}",
                 headers=api._headers(),
                 timeout=5,
             )
-            if r.ok:
-                return r.json().get("authorized", False)
-            return False
-        except requests.RequestException:
-            logger.exception("is_authorized failed")
-            return False
+        except requests.RequestException as e:
+            logger.exception("access_state failed")
+            raise ApiUnavailable(str(e)) from e
+        if r.status_code == 404:
+            return "unauthorized"
+        if not r.ok:
+            raise ApiUnavailable(f"HTTP {r.status_code}")
+        data = r.json()
+        if data.get("authorized", False):
+            return "authorized"
+        if data.get("terms_required", False):
+            return "terms_required"
+        return "unauthorized"
+
+    def is_authorized(self):
+        return self.access_state() == "authorized"
 
     def can_create_session(self):
         price = self.per_login + self.per_minute

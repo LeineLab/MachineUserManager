@@ -44,6 +44,14 @@ CARD_UNAUTHORIZED = [
 ]
 
 # HAS COUNTDONW
+TERMS_REQUIRED = [
+    " Please accept the",
+    " terms of use in",
+    " the web interface.",
+    "",
+]
+
+# HAS COUNTDONW
 CARD_UNKNOWN = [
     "  This tag is not",
     "     registred.",
@@ -74,7 +82,7 @@ LOGGED_IN = [
 ]
 
 DB_UNAVAILABLE = [
-    "Datenbase currently",
+    "Database currently",
     "unavailable.",
     "Please try again",
     "later.",
