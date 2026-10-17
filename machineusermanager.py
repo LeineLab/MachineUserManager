@@ -14,8 +14,31 @@ import callbacks
 logging.basicConfig()
 logging.getLogger().setLevel(logging.INFO)
 
+
+
+class _CallbacksWithDefaults:
+    """Use user_callbacks, falling back to the default (no-op) callbacks.
+
+    An outdated user_callbacks.py that lacks a newer callback would otherwise
+    raise AttributeError on the first call of that event.
+    """
+
+    def __init__(self, user_module, default_module):
+        self._user = user_module
+        self._default = default_module
+
+    def __getattr__(self, name):
+        try:
+            return getattr(self._user, name)
+        except AttributeError:
+            logging.debug("user_callbacks does not define %s, using default", name)
+            return getattr(self._default, name)
+
+
 try:
-    import user_callbacks as callbacks
+    import user_callbacks
+
+    callbacks = _CallbacksWithDefaults(user_callbacks, callbacks)
 except ImportError:
     logging.info("No user_callbacks available, using defaults")
 

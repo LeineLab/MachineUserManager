@@ -129,6 +129,7 @@ You can also only set `PRICE_ONCE` to reflect a price for using the machine but 
 ## Callbacks
 You can define your callbacks in `user_callbacks.py`.
 You're responsible to fetch exception within your callback, as the application only handles `NameError` if some callbacks are not defined or `TypeError` when using wrong parameter count.
+Callbacks missing from your `user_callbacks.py` (e.g. after an update added new events) fall back to the no-op defaults in `callbacks.py`.
 The file comes with prewritten functions, ready to use.
 The callback `card_terms_required(uid, name)` is called when a card is authorized but its user has not yet accepted the machine's terms of use (shown on the display until accepted in the web interface).
 If the API cannot be reached, the display shows "database unavailable" instead of "unknown card"/"not authorized".
