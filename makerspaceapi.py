@@ -20,6 +20,8 @@ class api:
     api_url = "http://localhost:8000"
     api_token = ""
     machine = "lasercutter"
+    # IDs of sessions whose DELETE failed; retried later (kept in memory only)
+    _pending_ends = []
 
     def configure(**kwargs):
         if "api_url" in kwargs:
@@ -52,6 +54,7 @@ class api:
         self.credit = 0
         self._session_id = None
         self._name = None
+        self.out_of_order_reason = None
 
         # Pre-fetch user info once on init
         try:
@@ -113,7 +116,7 @@ class api:
             return None, None
 
     def access_state(self):
-        """Return "authorized", "unauthorized" or "terms_required".
+        """Return "authorized", "unauthorized", "terms_required" or "out_of_order".
 
         "terms_required" means the user is authorized but has not accepted the
         machine's current terms of use yet (servers without that feature never
@@ -133,6 +136,9 @@ class api:
         if not r.ok:
             raise ApiUnavailable(f"HTTP {r.status_code}")
         data = r.json()
+        if data.get("out_of_order", False):
+            self.out_of_order_reason = data.get("out_of_order_reason")
+            return "out_of_order"
         if data.get("authorized", False):
             return "authorized"
         if data.get("terms_required", False):
@@ -222,15 +228,34 @@ class api:
             )
 
     def end_session(self):
-        if self._session_id is None:
+        """End the session on the server; if that fails, retry later (see flush_pending_ends)."""
+        session_id = self._session_id
+        self.session_valid_until = 0
+        self._session_id = None
+        if session_id is None:
             return
+        if not api._delete_session(session_id):
+            logger.warning("Could not end session %s, will retry", session_id)
+            api._pending_ends.append(session_id)
+
+    def _delete_session(session_id):
+        """True if the server no longer has this session open (ended, or unknown/foreign)."""
         try:
-            requests.delete(
-                f"{api._base()}/sessions/{self._session_id}",
+            r = requests.delete(
+                f"{api._base()}/sessions/{session_id}",
                 headers=api._headers(),
                 timeout=5,
             )
         except requests.RequestException:
             logger.exception("end_session failed")
-        self.session_valid_until = 0
-        self._session_id = None
+            return False
+        # 4xx (e.g. 404): retrying cannot help
+        return r.ok or 400 <= r.status_code < 500
+
+    def flush_pending_ends():
+        """Retry session ends that failed earlier; stops at the first failure (API still down)."""
+        while api._pending_ends:
+            if not api._delete_session(api._pending_ends[0]):
+                return
+            logger.info("Ended session %s after retry", api._pending_ends[0])
+            api._pending_ends.pop(0)

@@ -54,6 +54,11 @@ def card_unauthorized(uid, name, **kwargs):
     pass
 
 
+def card_out_of_order(uid, name, **kwargs):
+    """Called on scanning a card while the machine is marked out of order"""
+    pass
+
+
 def card_terms_required(uid, name, **kwargs):
     """Called on scanning an authorized card whose user has not accepted the machine's terms of use"""
     pass

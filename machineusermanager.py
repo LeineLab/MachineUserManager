@@ -296,7 +296,7 @@ def countdown(t):
         time.sleep(1)
 
 
-def display_text(arr):
+def display_text(arr, REASON=""):
     i = 0
     padding = " " * 20
     for line in arr:
@@ -307,6 +307,7 @@ def display_text(arr):
                     NAME=username,
                     CARD_HEX="{:08x}".format(uid).upper(),
                     CARD_DEC=uid,
+                    REASON=REASON,
                     CREDIT_REMAINING=credit,
                     TIME_REMAINING=time_remaining,
                     PRICE_ONCE=(
@@ -332,6 +333,7 @@ def display_text(arr):
 
 
 while True:
+    makerspaceapi.api.flush_pending_ends()
     lock_machine()
     set_alarm(0)
     set_button_leds(False, False)
@@ -345,7 +347,11 @@ while True:
         lcd.backlight_enabled = False
         lcd.clear()
         display_text(lang.MACHINE_OFF)
+        last_flush = 0
         while not machine_is_on:
+            if makerspaceapi.api._pending_ends and time.time() - last_flush > 10:
+                makerspaceapi.api.flush_pending_ends()
+                last_flush = time.time()
             time.sleep(0.5)
         logging.info("Machine switched on")
         try:
@@ -375,6 +381,7 @@ while True:
             logging.exception(
                 "Your callback may be malformed or outdated as probably the parameters mismatch"
             )
+        makerspaceapi.api.flush_pending_ends()
         try:
             session = makerspaceapi.api(uid)
             username, credit = session.get_user_info()
@@ -402,6 +409,19 @@ while True:
                     "Your callback may be malformed or outdated as probably the parameters mismatch"
                 )
             display_text(lang.CARD_UNKNOWN)
+            countdown(TIMEOUT_SEC)
+        elif access == "out_of_order":
+            logging.info("Machine is out of order, card %d rejected", uid)
+            try:
+                callbacks.card_out_of_order(uid, username)
+            except NameError:
+                logging.debug("No callback defined for event card_out_of_order")
+            except TypeError:
+                logging.exception(
+                    "Your callback may be malformed or outdated as probably the parameters mismatch"
+                )
+            reason = session.out_of_order_reason or ""
+            display_text(lang.OUT_OF_ORDER, REASON=reason)
             countdown(TIMEOUT_SEC)
         elif access == "terms_required":
             logging.info("Card %d has not accepted the terms of use", uid)
@@ -630,4 +650,17 @@ while True:
         else:
             last_state_change = time.time()  # reset debounce timer
             time.sleep(0.3)  # Reduce CPU load by fewer executions
+    if session_active and not machine_is_on and not OVERRIDE:
+        # The loop condition ends the loop as soon as the machine is switched off,
+        # before the in-loop power-off branch can run, so end the session here.
+        logging.debug("Logout due to turning off the machine")
+        session.end_session()
+        try:
+            callbacks.machine_turn_off()
+        except NameError:
+            logging.debug("No callback defined for event machine_turn_off")
+        except TypeError:
+            logging.exception(
+                "Your callback may be malformed or outdated as probably the parameters mismatch"
+            )
     lock_machine()

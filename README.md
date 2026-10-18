@@ -132,5 +132,7 @@ You're responsible to fetch exception within your callback, as the application o
 Callbacks missing from your `user_callbacks.py` (e.g. after an update added new events) fall back to the no-op defaults in `callbacks.py`.
 The file comes with prewritten functions, ready to use.
 The callback `card_terms_required(uid, name)` is called when a card is authorized but its user has not yet accepted the machine's terms of use (shown on the display until accepted in the web interface).
+The callback `card_out_of_order(uid, name)` is called when a card is scanned while the machine is marked out of order in the web interface (the reason is shown on the display).
+Sessions that could not be ended on the server (API unreachable, power-off) are retried in memory until the API answers.
 If the API cannot be reached, the display shows "database unavailable" instead of "unknown card"/"not authorized".
 If you need extra functions (e.g. for posting to your used chat solution), just add them right to the file.

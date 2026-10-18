@@ -44,6 +44,14 @@ CARD_UNAUTHORIZED = [
 ]
 
 # HAS COUNTDONW
+OUT_OF_ORDER = [
+    "  Maschine derzeit",
+    "   außer Betrieb.",
+    "{REASON}",
+    "",
+]
+
+# HAS COUNTDONW
 TERMS_REQUIRED = [
     "  Bitte Nutzungs-",
     "  bedingungen im",
