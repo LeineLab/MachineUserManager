@@ -3,6 +3,7 @@
 
 import logging
 from pn532pi import Pn532I2c, Pn532, pn532
+import nfc_poller
 from RPLCD import i2c
 import time
 import RPi.GPIO as GPIO
@@ -61,8 +62,10 @@ makerspaceapi.api.configure(
 pni2c = Pn532I2c(1)
 nfc = Pn532(pni2c)
 nfc.begin()
-nfc.setPassiveActivationRetries(0xFF)
+nfc.setPassiveActivationRetries(nfc_poller.ACTIVATION_RETRIES)
 nfc.SAMConfig()
+nfc_reader = nfc_poller.NfcPoller(nfc)
+nfc_reader.start()
 
 GPIO.setmode(GPIO.BCM)
 
@@ -261,14 +264,7 @@ def set_protection(state: bool):
 
 
 def read_tag():
-    success, uid_stream = nfc.readPassiveTargetID(pn532.PN532_MIFARE_ISO14443A_106KBPS)
-    tag_uid = 0
-    if success:
-        for i in uid_stream:
-            tag_uid <<= 8
-            tag_uid += i
-        return tag_uid
-    return None
+    return nfc_reader.get_int()
 
 
 def unlock_machine():
@@ -370,6 +366,8 @@ while True:
         read_uid = None
         while machine_is_on and read_uid == None:
             read_uid = read_tag()
+            if read_uid is None:
+                time.sleep(0.05)
         if read_uid is None or not machine_is_on:
             break
         uid = read_uid
