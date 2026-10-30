@@ -7,6 +7,19 @@ MakerSpaceAPI connector for MachineUserManager
 import time
 import requests
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+# One shared session: HTTP keep-alive reuses the TCP/TLS connection between calls
+# instead of a full handshake per request. If the server (or nginx) closed the idle
+# connection, urllib3 reconnects: connect errors are retried for every method, read
+# errors only for idempotent ones (GET/PUT/DELETE), so a POST whose response got lost
+# is never sent twice.
+_http = requests.Session()
+_retry = Retry(total=1, connect=1, read=1, status=0, redirect=0, other=0, backoff_factor=0)
+_http.mount("http://", HTTPAdapter(max_retries=_retry))
+_http.mount("https://", HTTPAdapter(max_retries=_retry))
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -58,7 +71,7 @@ class api:
 
         # Pre-fetch user info once on init
         try:
-            r = requests.get(
+            r = _http.get(
                 f"{api._base()}/users/nfc/{self.uid}",
                 headers=api._headers(),
                 timeout=5,
@@ -77,7 +90,7 @@ class api:
         an outage is not mistaken for an unknown card.
         """
         try:
-            r = requests.get(
+            r = _http.get(
                 f"{api._base()}/users/nfc/{self.uid}",
                 headers=api._headers(),
                 timeout=5,
@@ -96,7 +109,7 @@ class api:
 
     def get_rate(self, fallback_login, fallback_minute):
         try:
-            r = requests.get(
+            r = _http.get(
                 f"{api._base()}/machines/{api.machine}/authorize/{self.uid}",
                 headers=api._headers(),
                 timeout=5,
@@ -123,7 +136,7 @@ class api:
         report it). Raises ApiUnavailable if the API cannot be reached or fails.
         """
         try:
-            r = requests.get(
+            r = _http.get(
                 f"{api._base()}/machines/{api.machine}/authorize/{self.uid}",
                 headers=api._headers(),
                 timeout=5,
@@ -155,7 +168,7 @@ class api:
 
     def check_credit(self):
         try:
-            r = requests.get(
+            r = _http.get(
                 f"{api._base()}/users/nfc/{self.uid}",
                 headers=api._headers(),
                 timeout=5,
@@ -172,7 +185,7 @@ class api:
         self.start_time = int(time.time())
         self.get_rate(fallback_login, fallback_minute)
         try:
-            r = requests.post(
+            r = _http.post(
                 f"{api._base()}/sessions",
                 headers=api._headers(),
                 json={"nfc_id": self.uid},
@@ -201,7 +214,7 @@ class api:
         if self.session_valid_until >= time.time():
             return True
         try:
-            r = requests.put(
+            r = _http.put(
                 f"{api._base()}/sessions/{self._session_id}",
                 headers=api._headers(),
                 timeout=5,
@@ -241,7 +254,7 @@ class api:
     def _delete_session(session_id):
         """True if the server no longer has this session open (ended, or unknown/foreign)."""
         try:
-            r = requests.delete(
+            r = _http.delete(
                 f"{api._base()}/sessions/{session_id}",
                 headers=api._headers(),
                 timeout=5,
